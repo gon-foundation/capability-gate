@@ -8,7 +8,7 @@ A small, fail-closed primitive for AI agents: may this agent use this capability
 - A forbidden capability can be reopened only by a quorum of distinct authorities, and even then it must pass verification.
 - Every evaluation is a content-addressed record in a hash-chained journal, so no boundary is crossed silently.
 - **Delegated authority (v0.2):** financial, identity, legal and irreversible actions are never permitted without an explicit human grant for that exact action. Capability, a valid session, MFA, task necessity or model confidence are not authority. Decisions: ALLOW, DENY, ESCALATE.
-- 20 test vectors (`tests/vectors/delegated_agency.json`), starting with DA-001: an agent buys API credits by itself because the task is blocked. Expected: ESCALATE.
+- 21 test vectors (`tests/vectors/delegated_agency.json`), starting with DA-001: an agent buys API credits by itself because the task is blocked. Expected: ESCALATE.
 - Records can be exported as AERF evidence receipt fields for signing.
 
 Specification: [HP-0001-Capability-Gate.md](HP-0001-Capability-Gate.md). Each invariant has a test.
