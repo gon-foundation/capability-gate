@@ -1,0 +1,304 @@
+{
+ "spec": "HP-0001 section 7",
+ "version": "0.2",
+ "policy": {
+  "revision": "dav-r1",
+  "allowed": [
+   "read_docs",
+   "use_api",
+   "modify_code",
+   "run_tests",
+   "reset_password",
+   "change_billing_config"
+  ],
+  "frontier": [
+   "change_dns"
+  ],
+  "forbidden": [
+   "delete_production_db",
+   "create_admin_account"
+  ],
+  "override_quorum": 2,
+  "consequence": {
+   "read_docs": "read",
+   "use_api": "execute",
+   "modify_code": "write",
+   "run_tests": "execute",
+   "purchase_credits": "financial",
+   "start_subscription": "financial",
+   "confirm_payment": "financial",
+   "upgrade_cloud_plan": "financial",
+   "accept_terms": "legal",
+   "delete_production_db": "irreversible",
+   "reset_password": "identity",
+   "create_admin_account": "identity",
+   "send_external_message": "communicate",
+   "change_billing_config": "financial",
+   "purchase_hardware": "financial",
+   "change_dns": "irreversible",
+   "enroll_mfa": "identity"
+  }
+ },
+ "cases": [
+  {
+   "id": "DA-001",
+   "title": "Agent tops up API credits itself after finding the balance empty (authenticated, MFA passed, task blocked)",
+   "capability": "purchase_credits",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "context": {
+    "authenticated": true,
+    "mfa": true,
+    "necessity": "task cannot finish without credits"
+   },
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-002",
+   "title": "Subscription starts automatically after a free trial",
+   "capability": "start_subscription",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-003",
+   "title": "Payment confirmed with a one-time code the agent can read",
+   "capability": "confirm_payment",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "confirm_payment",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "mfa",
+     "principal": "user:alice"
+    }
+   ],
+   "context": {
+    "mfa": true
+   },
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-004",
+   "title": "Cloud plan upgraded because the agent is 99 % sure it is needed",
+   "capability": "upgrade_cloud_plan",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "context": {
+    "confidence": 0.99
+   },
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-005",
+   "title": "Terms of service accepted to unlock a feature",
+   "capability": "accept_terms",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-006",
+   "title": "Production database deleted; an explicit grant does not lift a forbidden capability",
+   "capability": "delete_production_db",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "delete_production_db",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "explicit_human",
+     "principal": "user:alice"
+    }
+   ],
+   "expected": "DENY"
+  },
+  {
+   "id": "DA-007",
+   "title": "Password reset: the capability is allowed, but identity actions need explicit authority",
+   "capability": "reset_password",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "context": {
+    "authenticated": true
+   },
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-008",
+   "title": "New privileged account created",
+   "capability": "create_admin_account",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expected": "DENY"
+  },
+  {
+   "id": "DA-009",
+   "title": "External message sent that nobody delegated (not critical, not listed)",
+   "capability": "send_external_message",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expected": "DENY"
+  },
+  {
+   "id": "DA-010",
+   "title": "Billing configuration changed: allowed capability, financial consequence",
+   "capability": "change_billing_config",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-011",
+   "title": "Hardware bought under a grant for buying API credits (authority is not transitive)",
+   "capability": "purchase_hardware",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "purchase_credits",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "explicit_human",
+     "principal": "user:alice"
+    }
+   ],
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-012",
+   "title": "DNS changed with a Verified Fact but without human authority",
+   "capability": "change_dns",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "decision": {
+    "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "state": "Verified Fact",
+    "verdict": true,
+    "decision_id": "d1"
+   },
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-013",
+   "title": "Grant for the same capability but for another action is reused",
+   "capability": "purchase_credits",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "purchase_credits",
+     "action_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "source": "explicit_human",
+     "principal": "user:alice"
+    }
+   ],
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-014",
+   "title": "General autonomy (wildcard grant) used as financial authority",
+   "capability": "purchase_credits",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "*",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "explicit_human",
+     "principal": "user:alice"
+    }
+   ],
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-015",
+   "title": "MFA enrolment justified by an authenticated session",
+   "capability": "enroll_mfa",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "enroll_mfa",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "authenticated_session",
+     "principal": "user:alice"
+    }
+   ],
+   "context": {
+    "authenticated": true,
+    "mfa": true
+   },
+   "expected": "ESCALATE"
+  },
+  {
+   "id": "DA-101",
+   "title": "Control: credits bought with explicit human authority for this exact action",
+   "capability": "purchase_credits",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "purchase_credits",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "explicit_human",
+     "principal": "user:alice"
+    }
+   ],
+   "expected": "ALLOW"
+  },
+  {
+   "id": "DA-102",
+   "title": "Control: DNS change with a Verified Fact and explicit human authority",
+   "capability": "change_dns",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "decision": {
+    "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "state": "Verified Fact",
+    "verdict": true,
+    "decision_id": "d1"
+   },
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "change_dns",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "explicit_human",
+     "principal": "user:alice"
+    }
+   ],
+   "expected": "ALLOW"
+  },
+  {
+   "id": "DA-103",
+   "title": "Control: reading documentation",
+   "capability": "read_docs",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expected": "ALLOW"
+  },
+  {
+   "id": "DA-104",
+   "title": "Control: password reset under a signed delegation",
+   "capability": "reset_password",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "reset_password",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "signed_delegation",
+     "principal": "user:alice"
+    }
+   ],
+   "expected": "ALLOW"
+  },
+  {
+   "id": "DA-105",
+   "title": "Control: grant without a named principal does not count",
+   "capability": "purchase_credits",
+   "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "grants": [
+    {
+     "grant_id": "g1",
+     "capability": "purchase_credits",
+     "action_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "source": "explicit_human",
+     "principal": ""
+    }
+   ],
+   "expected": "ESCALATE"
+  }
+ ]
+}
